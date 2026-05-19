@@ -8,13 +8,21 @@
  * @module
  */
 
+import type * as github_signature from "../github/signature.js";
+import type * as http from "../http.js";
+import type * as webhookDeliveries from "../webhookDeliveries.js";
+
 import type {
   ApiFromModules,
   FilterApi,
   FunctionReference,
 } from "convex/server";
 
-declare const fullApi: ApiFromModules<{}>;
+declare const fullApi: ApiFromModules<{
+  "github/signature": typeof github_signature;
+  http: typeof http;
+  webhookDeliveries: typeof webhookDeliveries;
+}>;
 
 /**
  * A utility for referencing Convex functions in your app's public API.
