@@ -39,8 +39,6 @@ created_at: number,
 
 Je veux commencer par configurer le webhook GitHub entrant dans Convex.
 
-Peux-tu me guider étape par étape comme tu l'as fait pour SupportFlow ?
-
 Etapes:
 
 1. Développeur ouvre PR sur GitHub
