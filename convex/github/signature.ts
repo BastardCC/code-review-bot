@@ -1,5 +1,5 @@
 /**
- * Vérifie l’en-tête `X-Hub-Signature-256` envoyé par GitHub (HMAC-SHA256 du corps brut).
+ * Verifies GitHub's `X-Hub-Signature-256` header (HMAC-SHA256 over the raw request body).
  * @see https://docs.github.com/en/webhooks/using-webhooks/validating-webhook-deliveries
  */
 export async function verifyGitHubWebhookSignature(
@@ -46,7 +46,7 @@ function hexToBytes(hex: string): Uint8Array {
   return out;
 }
 
-/** Comparaison en temps constant sur la longueur commune pour limiter les fuites par timing. */
+/** Constant-time comparison to reduce timing leakage when checking the MAC. */
 function timingSafeEqual(a: Uint8Array, b: Uint8Array): boolean {
   if (a.length !== b.length) return false;
   let out = 0;

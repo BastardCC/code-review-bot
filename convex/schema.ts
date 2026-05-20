@@ -22,7 +22,7 @@ export default defineSchema({
     created_at: v.number(),
   }).index("by_repo_and_pr", ["repo", "pr_number"]),
 
-  // Check if the delivery id has already been processed
+  /** GitHub `X-GitHub-Delivery` ids already processed — avoids double-handling retries. */
   webhook_deliveries: defineTable({
     delivery_id: v.string(),
   }).index("by_delivery_id", ["delivery_id"]),

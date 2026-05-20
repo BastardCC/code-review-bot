@@ -12,7 +12,7 @@ function logWebhook(message: string, data?: Record<string, unknown>) {
 
 const githubWebhookSecret = () => process.env.GITHUB_WEBHOOK_SECRET ?? "";
 
-/** Actions PR qu’on traitera à partir de la phase 2 ; pour l’instant on filtre uniquement (étape 6). */
+/** PR actions handled from phase 2 onward; for now we only filter events (phase 6). */
 const PULL_REQUEST_ACTIONS = new Set([
   "opened",
   "synchronize",
@@ -22,9 +22,9 @@ const PULL_REQUEST_ACTIONS = new Set([
 const http = httpRouter();
 
 /**
- * Étape 4 — Endpoint appelé par GitHub lorsqu’un webhook est configuré sur le dépôt.
- * URL complète : `<URL de ton déploiement Convex>/github/webhook`
- * (visible dans le dashboard Convex ou après `pnpm exec convex dev`).
+ * Phase 4 — GitHub hits this endpoint when the repo webhook is configured.
+ * Full URL: `<your Convex deployment URL>/github/webhook`
+ * (see Convex dashboard or `pnpm exec convex dev` output.)
  */
 http.route({
   path: "/github/webhook",
@@ -32,22 +32,22 @@ http.route({
   handler: httpAction(async (ctx, request) => {
     const secret = githubWebhookSecret();
     if (!secret) {
-      logWebhook("erreur: GITHUB_WEBHOOK_SECRET manquant sur le déploiement Convex");
-      return new Response(JSON.stringify({ error: "GITHUB_WEBHOOK_SECRET manquant" }), {
+      logWebhook("error: GITHUB_WEBHOOK_SECRET is not set on the Convex deployment");
+      return new Response(JSON.stringify({ error: "GITHUB_WEBHOOK_SECRET is not set" }), {
         status: 500,
         headers: { "Content-Type": "application/json" },
       });
     }
 
-    // Corps brut indispensable pour reproduire le même HMAC que GitHub.
+    // Raw body must match GitHub's byte-for-byte for HMAC verification.
     const payload = await request.arrayBuffer();
 
-    // Étape 5 — Sécurité : rejeter tout POST non signé.
+    // Phase 5 — Security: reject unsigned POST requests.
     const sig = request.headers.get("X-Hub-Signature-256");
     const valid = await verifyGitHubWebhookSignature(payload, sig, secret);
     if (!valid) {
-      logWebhook("refus: signature HMAC invalide ou en-tête absent");
-      return new Response(JSON.stringify({ error: "signature invalide" }), {
+      logWebhook("reject: invalid HMAC signature or missing header");
+      return new Response(JSON.stringify({ error: "invalid signature" }), {
         status: 401,
         headers: { "Content-Type": "application/json" },
       });
@@ -56,17 +56,17 @@ http.route({
     const event = request.headers.get("X-GitHub-Event") ?? "";
     const deliveryId = request.headers.get("X-GitHub-Delivery");
     if (!deliveryId) {
-      logWebhook("erreur: X-GitHub-Delivery manquant", { event });
-      return new Response(JSON.stringify({ error: "X-GitHub-Delivery manquant" }), {
+      logWebhook("error: missing X-GitHub-Delivery", { event });
+      return new Response(JSON.stringify({ error: "missing X-GitHub-Delivery" }), {
         status: 400,
         headers: { "Content-Type": "application/json" },
       });
     }
 
-    logWebhook("livraison acceptée (signature OK)", {
+    logWebhook("delivery verified (signature OK)", {
       event,
       deliveryId,
-      payloadOctets: payload.byteLength,
+      payloadBytes: payload.byteLength,
     });
 
     let json: unknown;
@@ -74,32 +74,32 @@ http.route({
       const text = new TextDecoder().decode(payload);
       json = JSON.parse(text) as unknown;
     } catch {
-      logWebhook("erreur: corps JSON invalide", { deliveryId, event });
-      return new Response(JSON.stringify({ error: "JSON invalide" }), {
+      logWebhook("error: invalid JSON body", { deliveryId, event });
+      return new Response(JSON.stringify({ error: "invalid JSON" }), {
         status: 400,
         headers: { "Content-Type": "application/json" },
       });
     }
 
-    // Ping lors de la création du webhook : GitHub vérifie l’URL.
+    // Ping sent when creating the webhook: GitHub checks the endpoint URL.
     if (event === "ping") {
-      logWebhook("résultat: ping OK (webhook configuré)", { deliveryId });
+      logWebhook("result: ping OK (webhook configured)", { deliveryId });
       return new Response(JSON.stringify({ ok: true, event: "ping" }), {
         status: 200,
         headers: { "Content-Type": "application/json" },
       });
     }
 
-    // Étape 6 — Ne réagir qu’aux PR pertinentes pour la suite du bot.
+    // Phase 6 — Only react to PR events relevant to the bot pipeline.
     if (event !== "pull_request") {
-      const body = { ok: true, skipped: true, reason: `event '${event}' ignoré` };
-      logWebhook("résultat: ignoré (pas pull_request)", { deliveryId, ...body });
+      const body = { ok: true, skipped: true, reason: `event '${event}' ignored` };
+      logWebhook("result: ignored (not pull_request)", { deliveryId, ...body });
       return jsonResponseAccepted(body);
     }
 
     if (!isPullRequestPayload(json)) {
-      const body = { ok: true, skipped: true, reason: "payload PR illisible" };
-      logWebhook("résultat: ignoré (payload PR mal formé)", { deliveryId, ...body });
+      const body = { ok: true, skipped: true, reason: "pull_request payload malformed" };
+      logWebhook("result: ignored (malformed PR payload)", { deliveryId, ...body });
       return jsonResponseAccepted(body);
     }
 
@@ -108,9 +108,9 @@ http.route({
       const body = {
         ok: true,
         skipped: true,
-        reason: `action PR '${action}' ignorée`,
+        reason: `pull_request action '${action}' ignored`,
       };
-      logWebhook("résultat: ignoré (action PR hors liste)", {
+      logWebhook("result: ignored (PR action not in allowlist)", {
         deliveryId,
         action,
         repo: json.repository.full_name,
@@ -119,7 +119,7 @@ http.route({
       return jsonResponseAccepted(body);
     }
 
-    // Étape 7 — Dedup avant tout travail lourd en phase 2.
+    // Phase 7 — Dedupe before any heavy work (phase 2).
     const claimResult = await ctx.runMutation(
       internal.webhookDeliveries.claimDelivery,
       { deliveryId },
@@ -131,13 +131,13 @@ http.route({
         duplicate: true,
         deliveryId,
       };
-      logWebhook("résultat: livraison déjà traitée (dedup)", body);
+      logWebhook("result: duplicate delivery (dedup)", body);
       return jsonResponseAccepted(body);
     }
 
     /**
-     * Ici commence la suite (phase 2) : lire la PR via l’API GitHub et upsert dans `prs`.
-     * Pour l’instant on confirme seulement que la livraison est valide et intéressante.
+     * Phase 2 will load the PR from the GitHub API and upsert into `prs`.
+     * For now we only acknowledge valid, actionable deliveries.
      */
     const accepted = {
       ok: true as const,
@@ -147,9 +147,9 @@ http.route({
       repo: json.repository.full_name,
       number: json.pull_request.number,
       message:
-        "Reçu avec succès. Prochaine étape : charger les fichiers depuis GitHub et écrire dans la table `prs`.",
+        "Accepted. Next: fetch files via GitHub API and upsert into the `prs` table.",
     };
-    logWebhook("résultat: PR à traiter (phase 2 à venir)", {
+    logWebhook("result: PR ready for pipeline (phase 2 next)", {
       repo: accepted.repo,
       pr: accepted.number,
       action: accepted.prAction,
