@@ -62,6 +62,49 @@ export const upsertFromGithub = internalMutation({
   },
 });
 
+const prStatusLl = v.union(v.literal("analyzed"), v.literal("needs_review"));
+
+export const markPrAnalyzing = internalMutation({
+  args: {
+    repo: v.string(),
+    pr_number: v.number(),
+  },
+  handler: async (ctx, args) => {
+    const doc = await ctx.db
+      .query("prs")
+      .withIndex("by_repo_and_pr", (q) =>
+        q.eq("repo", args.repo).eq("pr_number", args.pr_number),
+      )
+      .first();
+    if (!doc) throw new Error(`prs row not found: ${args.repo}#${args.pr_number}`);
+    await ctx.db.patch("prs", doc._id, { status: "analyzing" });
+  },
+});
+
+export const applyLlmReview = internalMutation({
+  args: {
+    repo: v.string(),
+    pr_number: v.number(),
+    quality_score: v.number(),
+    suggestions: v.array(v.string()),
+    status: prStatusLl,
+  },
+  handler: async (ctx, args) => {
+    const doc = await ctx.db
+      .query("prs")
+      .withIndex("by_repo_and_pr", (q) =>
+        q.eq("repo", args.repo).eq("pr_number", args.pr_number),
+      )
+      .first();
+    if (!doc) throw new Error(`prs row not found: ${args.repo}#${args.pr_number}`);
+    await ctx.db.patch("prs", doc._id, {
+      quality_score: args.quality_score,
+      suggestions: args.suggestions,
+      status: args.status,
+    });
+  },
+});
+
 /** Fetches the PR from GitHub REST and writes/updates `prs`. */
 export const fetchAndUpsertFromGithub = internalAction({
   args: {

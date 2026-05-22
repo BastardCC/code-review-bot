@@ -46,9 +46,13 @@ http.route({
         repo_full_name: parsed.repository.full_name,
         pr_number: parsed.pull_request.number,
       });
+      await ctx.runAction(internal.prAnalysis.analyzePr, {
+        repo_full_name: parsed.repository.full_name,
+        pr_number: parsed.pull_request.number,
+      });
     } catch (e) {
       const detail = e instanceof Error ? e.message : String(e);
-      return json({ error: "ingest_failed", detail }, 502);
+      return json({ error: "ingest_or_analyze_failed", detail }, 502);
     }
 
     const claimed = await ctx.runMutation(internal.webhookDeliveries.claimDelivery, {
