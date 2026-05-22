@@ -109,6 +109,67 @@ function buildDiffSummaryForPrompt(
   return chunks.join("\n");
 }
 
+async function postGithubIssueComment(params: {
+  owner: string;
+  repo: string;
+  /** PR number doubles as Issue number on GitHub. */
+  issueNumber: number;
+  body: string;
+  token: string;
+}): Promise<void> {
+  const url = `https://api.github.com/repos/${params.owner}/${params.repo}/issues/${params.issueNumber}/comments`;
+  const res = await fetch(url, {
+    method: "POST",
+    headers: {
+      ...GITHUB_HEADERS(params.token),
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ body: params.body }),
+  });
+
+  if (!res.ok) {
+    const text = await res.text();
+    throw new Error(`GitHub issue comment API ${res.status}: ${text.slice(0, 400)}`);
+  }
+}
+
+/** Markdown body visible on the PR conversation tab. */
+function buildReviewCommentMarkdown(inputs: {
+  repoFullName: string;
+  prNumber: number;
+  quality_score: number;
+  suggestions: string[];
+  status: "analyzed" | "needs_review";
+  degraded: boolean;
+}): string {
+  const lines: string[] = [
+    "### CodeReviewBot",
+    "",
+    `**Repository:** ${inputs.repoFullName} · **PR** #${inputs.prNumber}`,
+    "",
+    `- **Quality score:** ${inputs.quality_score}/100`,
+    `- **Status:** \`${inputs.status}\``,
+    "",
+  ];
+
+  if (inputs.degraded) {
+    lines.push("_The model output could not be validated; storing a degraded review entry._", "");
+  }
+
+  lines.push("**Suggestions:**", "");
+
+  if (inputs.suggestions.length === 0) {
+    lines.push("_None._");
+  } else {
+    for (const s of inputs.suggestions) {
+      lines.push(`- ${s}`);
+    }
+  }
+
+  lines.push("", "---", "_Automated comment from CodeReviewBot._");
+  return lines.join("\n");
+}
+
 const llmReviewSchema = z.object({
   quality_score: z.number().min(0).max(100),
   suggestions: z.array(z.string().max(500)).max(MAX_SUGGESTIONS),
@@ -271,25 +332,57 @@ export const analyzePr = internalAction({
       args.pr_number,
     );
 
+    let quality_score: number;
+    let suggestions: string[];
+    let status: "analyzed" | "needs_review";
+    let degraded: boolean;
+
     if (modelResultOrNull === null) {
-      await ctx.runMutation(internal.prs.applyLlmReview, {
-        repo: args.repo_full_name,
-        pr_number: args.pr_number,
-        quality_score: 0,
-        suggestions: ["Automated LLM review failed after retry (invalid output or API error)."],
-        status: "needs_review",
-      });
-      return { ok: false as const, degraded: true };
+      degraded = true;
+      quality_score = 0;
+      suggestions = [
+        "Automated LLM review failed after retry (invalid output or API error).",
+      ];
+      status = "needs_review";
+    } else {
+      degraded = false;
+      quality_score = modelResultOrNull.quality_score;
+      suggestions = modelResultOrNull.suggestions;
+      status = modelResultOrNull.status;
     }
 
     await ctx.runMutation(internal.prs.applyLlmReview, {
       repo: args.repo_full_name,
       pr_number: args.pr_number,
-      quality_score: modelResultOrNull.quality_score,
-      suggestions: modelResultOrNull.suggestions,
-      status: modelResultOrNull.status,
+      quality_score,
+      suggestions,
+      status,
     });
 
-    return { ok: true as const };
+    const commentMarkdown = buildReviewCommentMarkdown({
+      repoFullName: args.repo_full_name,
+      prNumber: args.pr_number,
+      quality_score,
+      suggestions,
+      status,
+      degraded,
+    });
+
+    try {
+      await postGithubIssueComment({
+        owner: parts.owner,
+        repo: parts.repo,
+        issueNumber: args.pr_number,
+        body: commentMarkdown,
+        token: githubToken,
+      });
+    } catch (commentErr) {
+      console.error(
+        "[analyzePr] GitHub PR comment failed:",
+        commentErr instanceof Error ? commentErr.message : String(commentErr),
+      );
+    }
+
+    return degraded ? ({ ok: false as const, degraded: true }) : ({ ok: true as const });
   },
 });
