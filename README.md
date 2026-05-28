@@ -1,36 +1,148 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# CodeReviewBot
 
-## Getting Started
+Automated code review assistant for GitHub pull requests. When a PR is opened or updated, the bot fetches the diff, analyzes it with an LLM, posts a review comment on GitHub, and surfaces results in a real-time admin dashboard.
 
-First, run the development server:
+## Goal
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+CodeReviewBot helps teams get **fast, consistent feedback** on pull requests without waiting for a human reviewer on every change. It:
+
+- Listens to GitHub PR webhooks (`opened`, `synchronize`, `reopened`)
+- Fetches changed files and builds a truncated diff for the LLM
+- Produces a **quality score (0–100)** and actionable **suggestions**
+- Marks each PR as **analyzed** or **needs review**
+- Posts a structured comment directly on the PR
+- Lets admins monitor all reviews from a **Next.js dashboard** (live via Convex)
+
+## How it works
+
+```
+Developer opens/updates PR on GitHub
+        ↓
+GitHub webhook → Convex HTTP action (/github/webhook)
+        ↓
+Fetch PR metadata + files (GitHub API)
+        ↓
+LLM review via OpenRouter (Convex action)
+        ↓
+Save results in Convex (`prs` table)
+        ↓
+Post review comment on GitHub
+        ↓
+Admin views PRs, scores & filters on /dashboard
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## Screenshots
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+> Add your screenshots under `docs/screenshots/` and they will render here.
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+### Dashboard overview
 
-## Learn More
+Stats bar, filters, and PR list.
 
-To learn more about Next.js, take a look at the following resources:
+![Dashboard overview — stats, filters, and PR list](docs/screenshots/dashboard-overview.png)
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+### PR card detail
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+Quality score, diff stats, suggestions, and GitHub link.
 
-## Deploy on Vercel
+![PR card with score, suggestions, and GitHub link](docs/screenshots/dashboard-pr-card.png)
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+### GitHub review comment
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+Automated comment posted on the pull request.
+
+![Review comment posted on GitHub](docs/screenshots/github-review-comment.png)
+
+## Tech stack
+
+| Layer                  | Technology                                                                           |
+| ---------------------- | ------------------------------------------------------------------------------------ |
+| **Frontend**           | [Next.js 16](https://nextjs.org/) (App Router), [React 19](https://react.dev/)       |
+| **Styling**            | [Tailwind CSS 4](https://tailwindcss.com/)                                           |
+| **Backend & database** | [Convex](https://convex.dev/) (queries, mutations, HTTP actions, real-time sync)     |
+| **LLM (backend)**      | [OpenRouter](https://openrouter.ai/) (`fetch` to chat/completions in Convex actions) |
+| **LLM (chat UI)**      | [Vercel AI SDK](https://sdk.vercel.ai/) + `@ai-sdk/openai` (OpenRouter-compatible)   |
+| **Validation**         | [Zod](https://zod.dev/)                                                              |
+| **GitHub**             | Webhooks (HMAC signature verification) + REST API (PRs, files, issue comments)       |
+| **Language**           | TypeScript                                                                           |
+| **Package manager**    | pnpm                                                                                 |
+
+### Planned / not in MVP
+
+- Email alerts via self-hosted [n8n](https://n8n.io/)
+- Dashboard authentication
+- Auto-approve simple PRs
+
+## Project structure
+
+```
+app/
+  dashboard/          # Admin dashboard (PR list, stats, filters)
+  api/chat/           # Optional OpenRouter chat route (Next.js)
+convex/
+  http.ts             # GitHub webhook endpoint
+  prs.ts              # PR ingest & queries
+  prAnalysis.ts       # LLM analysis + GitHub comment
+  schema.ts           # `prs`, `webhook_deliveries` tables
+```
+
+## Getting started
+
+### Prerequisites
+
+- Node.js 20+
+- [pnpm](https://pnpm.io/)
+- A [Convex](https://convex.dev/) account
+- A GitHub repo with a Personal Access Token (repo scope)
+- An [OpenRouter](https://openrouter.ai/) API key
+
+### 1. Install dependencies
+
+```bash
+pnpm install
+```
+
+### 2. Configure Convex
+
+```bash
+npx convex dev
+```
+
+Set these **Convex environment variables** (Dashboard → Settings → Environment variables):
+
+| Variable                | Description                                        |
+| ----------------------- | -------------------------------------------------- |
+| `GITHUB_WEBHOOK_SECRET` | Shared secret for GitHub webhook HMAC verification |
+| `GITHUB_TOKEN`          | PAT for reading PRs/files and posting comments     |
+| `OPENROUTER_API_KEY`    | API key for LLM analysis in Convex actions         |
+| `OPENROUTER_MODEL`      | Optional model id (default: `openrouter/free`)     |
+
+### 3. Configure Next.js
+
+Copy `.env.local.example` to `.env.local`:
+
+```bash
+cp .env.local.example .env.local
+```
+
+| Variable                 | Description                                      |
+| ------------------------ | ------------------------------------------------ |
+| `NEXT_PUBLIC_CONVEX_URL` | Convex deployment URL (from `convex dev` output) |
+| `OPENROUTER_API_KEY`     | For the optional `/api/chat` route               |
+
+### 4. GitHub webhook
+
+In your GitHub repo → **Settings → Webhooks → Add webhook**:
+
+- **Payload URL:** `https://<your-convex-deployment>.convex.site/github/webhook`
+- **Content type:** `application/json`
+- **Secret:** same value as `GITHUB_WEBHOOK_SECRET`
+- **Events:** Pull requests
+
+### 5. Run locally
+
+```bash
+pnpm dev:all
+```
+
+- Dashboard: [http://localhost:3000/dashboard](http://localhost:3000/dashboard)
