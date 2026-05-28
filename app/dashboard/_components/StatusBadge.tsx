@@ -1,4 +1,4 @@
-import { PrStatus, statusConfig } from "./status-config";
+import { PrStatus, statusConfig } from "../_lib/status-config";
 
 export function StatusBadge({ status }: { status: PrStatus }) {
   const config = statusConfig[status];

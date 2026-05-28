@@ -1,5 +1,5 @@
 import { Doc } from "@/convex/_generated/dataModel";
-import { scoreTone } from "./status-config";
+import { scoreTone } from "../_lib/status-config";
 import { StatusBadge } from "./StatusBadge";
 
 export function PrCard({ pr }: { pr: Doc<"prs"> }) {

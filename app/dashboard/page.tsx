@@ -1,6 +1,7 @@
 "use client";
 
 import { DashboardHeader } from "./_components/DashboardHeader";
+import { DashboardStats } from "./_components/DashboardStats";
 import { PrCard } from "./_components/PrCard";
 import { PrListEmpty } from "./_components/PrListEmpty";
 import { PrListSkeleton } from "./_components/PrListSkeleton";
@@ -13,6 +14,7 @@ const DashboardPage = () => {
   return (
     <main className="mx-auto w-full max-w-4xl flex-1 px-4 py-10 sm:px-6">
       <DashboardHeader />
+      <DashboardStats prs={prs} />
 
       {prs === undefined && <PrListSkeleton />}
 
