@@ -62,19 +62,6 @@ Automated comment posted on the pull request.
 - Dashboard authentication
 - Auto-approve simple PRs
 
-## Project structure
-
-```
-app/
-  dashboard/          # Admin dashboard (PR list, stats, filters)
-  page.tsx            # Redirects / → /dashboard
-convex/
-  http.ts             # GitHub webhook endpoint
-  prs.ts              # PR ingest & queries
-  prAnalysis.ts       # LLM analysis + GitHub comment
-  schema.ts           # `prs`, `webhook_deliveries` tables
-```
-
 ## Getting started
 
 ### Prerequisites
@@ -134,14 +121,3 @@ pnpm dev:all
 ```
 
 Open [http://localhost:3000](http://localhost:3000) — you are redirected to the dashboard at `/dashboard`.
-
-## Dashboard features
-
-- Live PR list synced from Convex
-- Stats: total PRs, in progress, needs review, average quality score
-- Filters: **All**, **Passed**, **Needs review**
-- Per-PR card: status badge, score, diff stats (+/− lines), suggestions, link to GitHub
-
-## License
-
-Private project — see repository owner for usage terms.
