@@ -55,17 +55,16 @@ Automated comment posted on the pull request.
 
 ## Tech stack
 
-| Layer                  | Technology                                                                           |
-| ---------------------- | ------------------------------------------------------------------------------------ |
-| **Frontend**           | [Next.js 16](https://nextjs.org/) (App Router), [React 19](https://react.dev/)       |
-| **Styling**            | [Tailwind CSS 4](https://tailwindcss.com/)                                           |
-| **Backend & database** | [Convex](https://convex.dev/) (queries, mutations, HTTP actions, real-time sync)     |
-| **LLM (backend)**      | [OpenRouter](https://openrouter.ai/) (`fetch` to chat/completions in Convex actions) |
-| **LLM (chat UI)**      | [Vercel AI SDK](https://sdk.vercel.ai/) + `@ai-sdk/openai` (OpenRouter-compatible)   |
-| **Validation**         | [Zod](https://zod.dev/)                                                              |
-| **GitHub**             | Webhooks (HMAC signature verification) + REST API (PRs, files, issue comments)       |
-| **Language**           | TypeScript                                                                           |
-| **Package manager**    | pnpm                                                                                 |
+| Layer | Technology |
+|-------|------------|
+| **Frontend** | [Next.js 16](https://nextjs.org/) (App Router), [React 19](https://react.dev/) |
+| **Styling** | [Tailwind CSS 4](https://tailwindcss.com/) |
+| **Backend & database** | [Convex](https://convex.dev/) (queries, mutations, HTTP actions, real-time sync) |
+| **LLM** | [OpenRouter](https://openrouter.ai/) (`fetch` to chat/completions in Convex actions) |
+| **Validation** | [Zod](https://zod.dev/) |
+| **GitHub** | Webhooks (HMAC signature verification) + REST API (PRs, files, issue comments) |
+| **Language** | TypeScript |
+| **Package manager** | pnpm |
 
 ### Planned / not in MVP
 
@@ -78,7 +77,7 @@ Automated comment posted on the pull request.
 ```
 app/
   dashboard/          # Admin dashboard (PR list, stats, filters)
-  api/chat/           # Optional OpenRouter chat route (Next.js)
+  page.tsx            # Redirects / → /dashboard
 convex/
   http.ts             # GitHub webhook endpoint
   prs.ts              # PR ingest & queries
@@ -110,12 +109,12 @@ npx convex dev
 
 Set these **Convex environment variables** (Dashboard → Settings → Environment variables):
 
-| Variable                | Description                                        |
-| ----------------------- | -------------------------------------------------- |
+| Variable | Description |
+|----------|-------------|
 | `GITHUB_WEBHOOK_SECRET` | Shared secret for GitHub webhook HMAC verification |
-| `GITHUB_TOKEN`          | PAT for reading PRs/files and posting comments     |
-| `OPENROUTER_API_KEY`    | API key for LLM analysis in Convex actions         |
-| `OPENROUTER_MODEL`      | Optional model id (default: `openrouter/free`)     |
+| `GITHUB_TOKEN` | PAT for reading PRs/files and posting comments |
+| `OPENROUTER_API_KEY` | API key for LLM analysis in Convex actions |
+| `OPENROUTER_MODEL` | Optional model id (default: `openrouter/free`) |
 
 ### 3. Configure Next.js
 
@@ -125,10 +124,9 @@ Copy `.env.local.example` to `.env.local`:
 cp .env.local.example .env.local
 ```
 
-| Variable                 | Description                                      |
-| ------------------------ | ------------------------------------------------ |
+| Variable | Description |
+|----------|-------------|
 | `NEXT_PUBLIC_CONVEX_URL` | Convex deployment URL (from `convex dev` output) |
-| `OPENROUTER_API_KEY`     | For the optional `/api/chat` route               |
 
 ### 4. GitHub webhook
 
@@ -145,4 +143,15 @@ In your GitHub repo → **Settings → Webhooks → Add webhook**:
 pnpm dev:all
 ```
 
-- Dashboard: [http://localhost:3000/dashboard](http://localhost:3000/dashboard)
+Open [http://localhost:3000](http://localhost:3000) — you are redirected to the dashboard at `/dashboard`.
+
+## Dashboard features
+
+- Live PR list synced from Convex
+- Stats: total PRs, in progress, needs review, average quality score
+- Filters: **All**, **Passed**, **Needs review**
+- Per-PR card: status badge, score, diff stats (+/− lines), suggestions, link to GitHub
+
+## License
+
+Private project — see repository owner for usage terms.
