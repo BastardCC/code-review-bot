@@ -1,5 +1,5 @@
 import { internal } from "./_generated/api";
-import { internalAction, internalMutation } from "./_generated/server";
+import { internalAction, internalMutation, query } from "./_generated/server";
 import { v } from "convex/values";
 
 type GithubPullPayload = {
@@ -9,6 +9,12 @@ type GithubPullPayload = {
   deletions?: number;
   created_at?: string;
 };
+
+export const getPrs = query({
+  handler: async (ctx) => {
+    return await ctx.db.query("prs").collect();
+  },
+});
 
 function splitRepo(fullName: string): { owner: string; repo: string } | null {
   const i = fullName.indexOf("/");
