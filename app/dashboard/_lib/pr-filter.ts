@@ -1,14 +1,14 @@
 import { Doc } from "@/convex/_generated/dataModel";
 
-export type PrFilter = "all" | "conformes" | "needs_review";
+export type PrFilter = "all" | "passed" | "needs_review";
 
 export const prFilterOptions: {
   value: PrFilter;
   label: string;
 }[] = [
-  { value: "all", label: "Tout" },
-  { value: "conformes", label: "Conformes" },
-  { value: "needs_review", label: "À relire" },
+  { value: "all", label: "All" },
+  { value: "passed", label: "Passed" },
+  { value: "needs_review", label: "Needs review" },
 ];
 
 export function filterPrs(
@@ -18,7 +18,7 @@ export function filterPrs(
   switch (filter) {
     case "all":
       return prs;
-    case "conformes":
+    case "passed":
       return prs.filter(
         (pr) => pr.status === "analyzed" || pr.status === "approved",
       );

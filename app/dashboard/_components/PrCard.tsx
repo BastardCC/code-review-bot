@@ -19,12 +19,12 @@ export function PrCard({ pr }: { pr: Doc<"prs"> }) {
             {pr.title}
           </h2>
           <p className="text-sm text-zinc-500 dark:text-zinc-400">
-            par{" "}
+            by{" "}
             <span className="font-medium text-zinc-700 dark:text-zinc-300">
               {pr.author}
             </span>
             {" · "}
-            {new Date(pr.created_at).toLocaleString("fr-FR")}
+            {new Date(pr.created_at).toLocaleString("en-US")}
           </p>
         </div>
 
@@ -74,7 +74,7 @@ export function PrCard({ pr }: { pr: Doc<"prs"> }) {
           rel="noopener noreferrer"
           className="inline-flex items-center gap-1.5 rounded-lg bg-zinc-900 px-3 py-1.5 text-sm font-medium text-white transition-colors hover:bg-zinc-700 dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-zinc-300"
         >
-          Voir sur GitHub
+          View on GitHub
           <span aria-hidden>↗</span>
         </a>
       </div>

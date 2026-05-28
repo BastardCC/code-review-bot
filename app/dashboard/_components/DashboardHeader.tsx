@@ -5,7 +5,7 @@ export function DashboardHeader() {
         Pull requests
       </h1>
       <p className="mt-1 text-sm text-zinc-500 dark:text-zinc-400">
-        Revues automatiques du bot, mises à jour en temps réel.
+        Automated bot reviews, updated in real time.
       </p>
     </header>
   );

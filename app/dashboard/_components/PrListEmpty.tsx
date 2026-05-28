@@ -1,6 +1,6 @@
 export function PrListEmpty({
-  title = "Aucune PR pour l'instant",
-  description = "Ouvre une pull request sur GitHub pour déclencher une analyse.",
+  title = "No pull requests yet",
+  description = "Open a pull request on GitHub to trigger an analysis.",
 }: {
   title?: string;
   description?: string;

@@ -15,14 +15,13 @@ const filteredEmptyMessages: Record<
   Exclude<PrFilter, "all">,
   { title: string; description: string }
 > = {
-  conformes: {
-    title: "Aucune PR conforme",
-    description:
-      "Les PR analysées sans remarque bloquante apparaîtront ici.",
+  passed: {
+    title: "No passed pull requests",
+    description: "Pull requests analyzed without blocking issues will appear here.",
   },
   needs_review: {
-    title: "Aucune PR à relire",
-    description: "Les PR nécessitant une relecture manuelle apparaîtront ici.",
+    title: "No pull requests need review",
+    description: "Pull requests requiring manual review will appear here.",
   },
 };
 

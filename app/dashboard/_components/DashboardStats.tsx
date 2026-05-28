@@ -49,7 +49,7 @@ export function DashboardStats({ prs }: { prs: Doc<"prs">[] | undefined }) {
     <div className="mb-8 grid grid-cols-2 gap-3 sm:grid-cols-4">
       <StatCard label="Total PR" value={stats.total} />
       <StatCard
-        label="En cours"
+        label="In progress"
         value={stats.inProgress}
         valueClassName={
           stats.inProgress > 0
@@ -58,7 +58,7 @@ export function DashboardStats({ prs }: { prs: Doc<"prs">[] | undefined }) {
         }
       />
       <StatCard
-        label="À relire"
+        label="Needs review"
         value={stats.needsReview}
         valueClassName={
           stats.needsReview > 0
@@ -67,7 +67,7 @@ export function DashboardStats({ prs }: { prs: Doc<"prs">[] | undefined }) {
         }
       />
       <StatCard
-        label="Score moyen"
+        label="Average score"
         value={stats.averageScore ?? "—"}
         valueClassName={scoreTone(stats.averageScore ?? undefined)}
       />
