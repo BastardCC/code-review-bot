@@ -31,40 +31,30 @@ Post review comment on GitHub
 Admin views PRs, scores & filters on /dashboard
 ```
 
-## Screenshots
-
-> Add your screenshots under `docs/screenshots/` and they will render here.
-
 ### Dashboard overview
 
 Stats bar, filters, and PR list.
 
-![Dashboard overview — stats, filters, and PR list](docs/screenshots/dashboard-overview.png)
-
-### PR card detail
-
-Quality score, diff stats, suggestions, and GitHub link.
-
-![PR card with score, suggestions, and GitHub link](docs/screenshots/dashboard-pr-card.png)
+![Dashboard](app/assets/dashboard.png)
 
 ### GitHub review comment
 
 Automated comment posted on the pull request.
 
-![Review comment posted on GitHub](docs/screenshots/github-review-comment.png)
+![Review comment posted on GitHub](app/assets/automatedComment.png)
 
 ## Tech stack
 
-| Layer | Technology |
-|-------|------------|
-| **Frontend** | [Next.js 16](https://nextjs.org/) (App Router), [React 19](https://react.dev/) |
-| **Styling** | [Tailwind CSS 4](https://tailwindcss.com/) |
-| **Backend & database** | [Convex](https://convex.dev/) (queries, mutations, HTTP actions, real-time sync) |
-| **LLM** | [OpenRouter](https://openrouter.ai/) (`fetch` to chat/completions in Convex actions) |
-| **Validation** | [Zod](https://zod.dev/) |
-| **GitHub** | Webhooks (HMAC signature verification) + REST API (PRs, files, issue comments) |
-| **Language** | TypeScript |
-| **Package manager** | pnpm |
+| Layer                  | Technology                                                                           |
+| ---------------------- | ------------------------------------------------------------------------------------ |
+| **Frontend**           | [Next.js 16](https://nextjs.org/) (App Router), [React 19](https://react.dev/)       |
+| **Styling**            | [Tailwind CSS 4](https://tailwindcss.com/)                                           |
+| **Backend & database** | [Convex](https://convex.dev/) (queries, mutations, HTTP actions, real-time sync)     |
+| **LLM**                | [OpenRouter](https://openrouter.ai/) (`fetch` to chat/completions in Convex actions) |
+| **Validation**         | [Zod](https://zod.dev/)                                                              |
+| **GitHub**             | Webhooks (HMAC signature verification) + REST API (PRs, files, issue comments)       |
+| **Language**           | TypeScript                                                                           |
+| **Package manager**    | pnpm                                                                                 |
 
 ### Planned / not in MVP
 
@@ -109,12 +99,12 @@ npx convex dev
 
 Set these **Convex environment variables** (Dashboard → Settings → Environment variables):
 
-| Variable | Description |
-|----------|-------------|
+| Variable                | Description                                        |
+| ----------------------- | -------------------------------------------------- |
 | `GITHUB_WEBHOOK_SECRET` | Shared secret for GitHub webhook HMAC verification |
-| `GITHUB_TOKEN` | PAT for reading PRs/files and posting comments |
-| `OPENROUTER_API_KEY` | API key for LLM analysis in Convex actions |
-| `OPENROUTER_MODEL` | Optional model id (default: `openrouter/free`) |
+| `GITHUB_TOKEN`          | PAT for reading PRs/files and posting comments     |
+| `OPENROUTER_API_KEY`    | API key for LLM analysis in Convex actions         |
+| `OPENROUTER_MODEL`      | Optional model id (default: `openrouter/free`)     |
 
 ### 3. Configure Next.js
 
@@ -124,8 +114,8 @@ Copy `.env.local.example` to `.env.local`:
 cp .env.local.example .env.local
 ```
 
-| Variable | Description |
-|----------|-------------|
+| Variable                 | Description                                      |
+| ------------------------ | ------------------------------------------------ |
 | `NEXT_PUBLIC_CONVEX_URL` | Convex deployment URL (from `convex dev` output) |
 
 ### 4. GitHub webhook
